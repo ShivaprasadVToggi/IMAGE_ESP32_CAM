@@ -1,11 +1,17 @@
 /**
  * ESP32-CAM Security Stream Portal — Client Script v2
+ * Zero-Latency Edition
  *
- * Premium surveillance dashboard with:
- *  - 200ms polling loop with frame buffering
- *  - FPS counter & latency tracking
+ * CRITICAL ANTI-CACHE MEASURES:
+ *  - fetch() with cache: 'no-store' header
+ *  - Cache-busting timestamp query parameter on every request
+ *  - Prevents the browser from ever serving a stale frame
+ *
+ * Features:
+ *  - 200ms polling loop
+ *  - FPS counter & round-trip latency tracking
  *  - Smooth online/offline state transitions
- *  - Live clock with viewport timestamp overlay
+ *  - Live viewport timestamp overlay
  */
 
 // ═══════════════════════════════════════════════════════════════
@@ -98,7 +104,7 @@ function setOnline(base64Image) {
     feedImage.style.opacity = '1';
   }
 
-  // Update frame
+  // Update frame — direct base64 binding
   feedImage.src = 'data:image/jpeg;base64,' + base64Image;
   frameCount++;
   fpsFrameCount++;
@@ -139,13 +145,20 @@ function setOffline() {
   }
 }
 
-// ─── Poll Relay Server ────────────────────────────────────────
+// ─── Poll Relay Server (Zero-Cache) ──────────────────────────
 async function pollFrame() {
   const fetchStart = performance.now();
 
   try {
-    const response = await fetch(`${RELAY_URL}/latest-frame`, {
-      cache: 'no-store'
+    // CRITICAL: Cache-busting via both fetch options AND a unique query param
+    // This prevents browsers, CDNs, and service workers from serving stale data
+    const cacheBuster = Date.now();
+    const response = await fetch(`${RELAY_URL}/latest-frame?t=${cacheBuster}`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
     });
 
     if (!response.ok) {
@@ -182,7 +195,7 @@ async function pollFrame() {
 
 // ─── Initialize ───────────────────────────────────────────────
 function init() {
-  // Start clock (immediate + 1s interval)
+  // Start clock
   updateClock();
   setInterval(updateClock, 1000);
 
@@ -194,13 +207,13 @@ function init() {
 
   // Console branding
   console.log(
-    '%c🛡️ Security Stream Portal v2.0',
+    '%c🛡️ Security Stream Portal v2.0 (Zero-Latency)',
     'color: #2ea44f; font-weight: bold; font-size: 16px;'
   );
   console.log(
     '%c   Relay:    ' + RELAY_URL +
     '\n   Polling:  ' + POLL_INTERVAL_MS + 'ms' +
-    '\n   Features: Corner brackets, scanlines, REC indicator',
+    '\n   Cache:    DISABLED (no-store + timestamp bust)',
     'color: #8b949e; font-size: 11px; font-family: monospace;'
   );
 }
