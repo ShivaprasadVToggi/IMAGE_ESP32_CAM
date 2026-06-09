@@ -19,13 +19,22 @@
     <div class="header-inner">
       <div class="header-top">
         <div class="logo-group">
-          <div class="logo-icon" aria-hidden="true">🛡️</div>
+          <div class="logo-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
           <div class="logo-text">
             <span class="logo-title">Security Stream Portal</span>
-            <span class="logo-subtitle">ESP32-CAM • Cloud Relay</span>
+            <span class="logo-subtitle">ESP32-CAM • Cloud Relay • Live</span>
           </div>
         </div>
-        <div class="header-time" id="header-time">— Loading —</div>
+        <div class="header-time" id="header-time">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span id="header-time-text">— Loading —</span>
+        </div>
       </div>
 
       <!-- Status Badges -->
@@ -53,14 +62,37 @@
       <!-- Stream top bar -->
       <div class="stream-header">
         <div class="stream-label">
-          <span class="rec-dot hidden" id="rec-dot"></span>
-          <span id="cam-label">CAM-01 • DISCONNECTED</span>
+          <div class="rec-indicator hidden" id="rec-indicator">
+            <span class="rec-dot"></span>
+            <span class="rec-text">REC</span>
+          </div>
+          <span class="cam-label" id="cam-label">CAM-01 • DISCONNECTED</span>
         </div>
-        <div class="stream-meta" id="stream-meta">160×120 → 480×360</div>
+        <div class="stream-label-right">
+          <span class="stream-meta" id="stream-meta">160×120 → 480×360</span>
+          <span class="stream-fps" id="stream-fps">-- FPS</span>
+        </div>
       </div>
 
       <!-- Video viewport -->
-      <div class="stream-viewport">
+      <div class="stream-viewport" id="stream-viewport">
+
+        <!-- Diagonal scanline overlay -->
+        <div class="scanline-overlay" aria-hidden="true"></div>
+
+        <!-- Corner bracket overlays (4 individual corners) -->
+        <div class="corner-bracket corner-tl" aria-hidden="true"></div>
+        <div class="corner-bracket corner-tr" aria-hidden="true"></div>
+        <div class="corner-bracket corner-bl" aria-hidden="true"></div>
+        <div class="corner-bracket corner-br" aria-hidden="true"></div>
+
+        <!-- Timestamp overlay on the video -->
+        <div class="viewport-timestamp" id="viewport-timestamp">
+          <span id="viewport-time">00:00:00</span>
+          <span class="viewport-date" id="viewport-date">2026-01-01</span>
+        </div>
+
+        <!-- Feed image -->
         <img
           id="feed-image"
           src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
@@ -70,22 +102,35 @@
 
         <!-- Offline placeholder -->
         <div class="offline-placeholder" id="offline-placeholder">
-          <div class="offline-icon">📷</div>
-          <div class="offline-text">System Offline</div>
-          <div class="offline-sub">No feed — camera disconnected or publisher stopped</div>
+          <div class="offline-icon-ring">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </div>
+          <div class="offline-text-group">
+            <div class="offline-text">System Offline (No Feed)</div>
+            <div class="offline-sub">Camera disconnected or publisher stopped</div>
+          </div>
+          <div class="offline-signal-bars">
+            <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
+          </div>
         </div>
       </div>
 
       <!-- Stream bottom stats -->
       <div class="stream-footer">
         <div class="stream-stat" id="stat-frames">
-          FRAMES: <span class="value">0</span>
+          FRAMES <span class="value">0</span>
         </div>
         <div class="stream-stat" id="stat-status">
-          STATUS: <span class="value red">NO SIGNAL</span>
+          STATUS <span class="value red">NO SIGNAL</span>
+        </div>
+        <div class="stream-stat" id="stat-latency">
+          LATENCY <span class="value" id="stat-latency-val">--</span>
         </div>
         <div class="stream-stat" id="stat-resolution">
-          RES: <span class="value">480×360</span>
+          RES <span class="value">480×360</span>
         </div>
       </div>
     </div>
@@ -97,6 +142,8 @@
       <span>Efficient Compression Pipeline</span>
       <span class="footer-divider">|</span>
       Developed for Low-Bandwidth Devices
+      <span class="footer-divider">|</span>
+      <span class="footer-secure">🔒 End-to-End Encrypted</span>
     </p>
   </footer>
 

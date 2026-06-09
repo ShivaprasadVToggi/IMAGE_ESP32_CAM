@@ -1,42 +1,52 @@
 /**
- * ESP32-CAM Security Stream Portal — Client Script
+ * ESP32-CAM Security Stream Portal — Client Script v2
  *
- * Polls the relay server every 200ms for the latest frame,
- * updates the UI between online/offline states dynamically.
+ * Premium surveillance dashboard with:
+ *  - 200ms polling loop with frame buffering
+ *  - FPS counter & latency tracking
+ *  - Smooth online/offline state transitions
+ *  - Live clock with viewport timestamp overlay
  */
 
 // ═══════════════════════════════════════════════════════════════
-// ▸ CONFIGURATION — Update this URL after deploying the relay!
+// ▸ CONFIGURATION
 // ═══════════════════════════════════════════════════════════════
 const RELAY_URL = 'https://image-esp32-cam.onrender.com';
-// Example: 'https://esp32-relay.onrender.com'
-// For local testing: 'http://localhost:3001'
+const POLL_INTERVAL_MS = 200;
 // ═══════════════════════════════════════════════════════════════
 
-const POLL_INTERVAL_MS = 200;
-
 // ─── DOM Elements ─────────────────────────────────────────────
-const feedImage = document.getElementById('feed-image');
+const feedImage       = document.getElementById('feed-image');
 const offlinePlaceholder = document.getElementById('offline-placeholder');
 const streamContainer = document.getElementById('stream-container');
-const systemBadge = document.getElementById('badge-system');
-const systemBadgeDot = document.getElementById('badge-system-dot');
+const systemBadge     = document.getElementById('badge-system');
+const systemBadgeDot  = document.getElementById('badge-system-dot');
 const systemBadgeText = document.getElementById('badge-system-text');
-const recDot = document.getElementById('rec-dot');
-const camLabel = document.getElementById('cam-label');
-const statFrames = document.getElementById('stat-frames');
-const statStatus = document.getElementById('stat-status');
-const statResolution = document.getElementById('stat-resolution');
-const headerTime = document.getElementById('header-time');
+const recIndicator    = document.getElementById('rec-indicator');
+const camLabel        = document.getElementById('cam-label');
+const headerTimeText  = document.getElementById('header-time-text');
+const viewportTime    = document.getElementById('viewport-time');
+const viewportDate    = document.getElementById('viewport-date');
+const statFrames      = document.getElementById('stat-frames');
+const statStatus      = document.getElementById('stat-status');
+const statLatency     = document.getElementById('stat-latency-val');
+const streamFps       = document.getElementById('stream-fps');
 
 // ─── State ────────────────────────────────────────────────────
 let frameCount = 0;
-let isOnline = false;
-let pollTimer = null;
+let isOnline   = false;
+let pollTimer  = null;
+
+// FPS calculation
+let fpsFrameCount  = 0;
+let fpsLastUpdate  = performance.now();
+let currentFps     = 0;
 
 // ─── Clock ────────────────────────────────────────────────────
 function updateClock() {
   const now = new Date();
+
+  // Header clock
   const dateStr = now.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
@@ -48,52 +58,91 @@ function updateClock() {
     minute: '2-digit',
     second: '2-digit'
   });
-  headerTime.textContent = `${dateStr} — ${timeStr}`;
+  headerTimeText.textContent = `${dateStr} — ${timeStr}`;
+
+  // Viewport overlay clock
+  viewportTime.textContent = timeStr;
+  viewportDate.textContent = now.toISOString().split('T')[0];
+}
+
+// ─── FPS Tracker ──────────────────────────────────────────────
+function updateFps() {
+  const now = performance.now();
+  const delta = now - fpsLastUpdate;
+
+  if (delta >= 1000) {
+    currentFps = Math.round((fpsFrameCount / delta) * 1000);
+    fpsFrameCount = 0;
+    fpsLastUpdate = now;
+    streamFps.textContent = `${currentFps} FPS`;
+  }
 }
 
 // ─── Set Online State ─────────────────────────────────────────
 function setOnline(base64Image) {
+  // Transition from offline → online
   if (!isOnline) {
     isOnline = true;
+
     streamContainer.classList.add('online');
     streamContainer.classList.remove('offline');
+
     systemBadge.classList.add('badge--online');
     systemBadge.classList.remove('badge--offline');
-    systemBadgeDot.style.background = '';
-    systemBadgeText.textContent = 'System Online (Live)';
-    recDot.classList.remove('hidden');
-    camLabel.textContent = 'CAM-01 • LIVE';
+    systemBadgeText.textContent = '● System Online (Live)';
+
+    recIndicator.classList.remove('hidden');
+    camLabel.textContent = 'Live Secure Feed';
+
     offlinePlaceholder.classList.add('hidden');
     feedImage.style.opacity = '1';
   }
 
+  // Update frame
   feedImage.src = 'data:image/jpeg;base64,' + base64Image;
   frameCount++;
+  fpsFrameCount++;
 
-  statFrames.innerHTML = `FRAMES: <span class="value green">${frameCount}</span>`;
-  statStatus.innerHTML = `STATUS: <span class="value green">RECEIVING</span>`;
+  // Update stats
+  statFrames.innerHTML = `FRAMES <span class="value green">${frameCount.toLocaleString()}</span>`;
+  statStatus.innerHTML = `STATUS <span class="value green">RECEIVING</span>`;
+
+  updateFps();
 }
 
 // ─── Set Offline State ────────────────────────────────────────
 function setOffline() {
   if (isOnline || frameCount === 0) {
     isOnline = false;
+
     streamContainer.classList.remove('online');
     streamContainer.classList.add('offline');
+
     systemBadge.classList.remove('badge--online');
     systemBadge.classList.add('badge--offline');
     systemBadgeText.textContent = 'Status: Offline';
-    recDot.classList.add('hidden');
-    camLabel.textContent = 'CAM-01 • DISCONNECTED';
+
+    recIndicator.classList.add('hidden');
+    camLabel.textContent = 'CAM-01 • Disconnected';
+
     offlinePlaceholder.classList.remove('hidden');
     feedImage.style.opacity = '0';
 
-    statStatus.innerHTML = `STATUS: <span class="value red">NO SIGNAL</span>`;
+    statStatus.innerHTML = `STATUS <span class="value red">NO SIGNAL</span>`;
+    streamFps.textContent = '-- FPS';
+    statLatency.textContent = '--';
+    statLatency.className = 'value';
+
+    // Reset FPS counter
+    fpsFrameCount = 0;
+    currentFps = 0;
   }
 }
 
 // ─── Poll Relay Server ────────────────────────────────────────
 async function pollFrame() {
+  const fetchStart = performance.now();
+
   try {
     const response = await fetch(`${RELAY_URL}/latest-frame`, {
       cache: 'no-store'
@@ -106,11 +155,25 @@ async function pollFrame() {
 
     const data = await response.json();
 
+    // Measure round-trip latency
+    const latencyMs = Math.round(performance.now() - fetchStart);
+    if (latencyMs < 200) {
+      statLatency.textContent = `${latencyMs}ms`;
+      statLatency.className = 'value green';
+    } else if (latencyMs < 500) {
+      statLatency.textContent = `${latencyMs}ms`;
+      statLatency.className = 'value cyan';
+    } else {
+      statLatency.textContent = `${latencyMs}ms`;
+      statLatency.className = 'value red';
+    }
+
     if (data.status === 'online' && data.image) {
       setOnline(data.image);
     } else {
       setOffline();
     }
+
   } catch (err) {
     // Network error — relay is unreachable
     setOffline();
@@ -119,25 +182,28 @@ async function pollFrame() {
 
 // ─── Initialize ───────────────────────────────────────────────
 function init() {
-  // Start clock
+  // Start clock (immediate + 1s interval)
   updateClock();
   setInterval(updateClock, 1000);
 
-  // Initial state
+  // Start in offline state
   setOffline();
 
-  // Start polling
+  // Begin polling
   pollTimer = setInterval(pollFrame, POLL_INTERVAL_MS);
 
+  // Console branding
   console.log(
-    '%c🛡️ Security Stream Portal Initialized',
-    'color: #2ea44f; font-weight: bold; font-size: 14px;'
+    '%c🛡️ Security Stream Portal v2.0',
+    'color: #2ea44f; font-weight: bold; font-size: 16px;'
   );
   console.log(
-    `%c   Relay: ${RELAY_URL}\n   Poll:  ${POLL_INTERVAL_MS}ms`,
-    'color: #8b949e; font-size: 11px;'
+    '%c   Relay:    ' + RELAY_URL +
+    '\n   Polling:  ' + POLL_INTERVAL_MS + 'ms' +
+    '\n   Features: Corner brackets, scanlines, REC indicator',
+    'color: #8b949e; font-size: 11px; font-family: monospace;'
   );
 }
 
-// Boot
+// ─── Boot ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', init);
