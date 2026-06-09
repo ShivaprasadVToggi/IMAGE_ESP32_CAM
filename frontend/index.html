@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Real-time ESP32-CAM security surveillance dashboard with cloud-relayed live video feed and face detection." />
+  <meta name="theme-color" content="#0d1117" />
+  <title>Security Stream Portal — ESP32-CAM Live Feed</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Noise grain overlay -->
+  <div class="noise-overlay" aria-hidden="true"></div>
+
+  <!-- ═══ HEADER ═══ -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-top">
+        <div class="logo-group">
+          <div class="logo-icon" aria-hidden="true">🛡️</div>
+          <div class="logo-text">
+            <span class="logo-title">Security Stream Portal</span>
+            <span class="logo-subtitle">ESP32-CAM • Cloud Relay</span>
+          </div>
+        </div>
+        <div class="header-time" id="header-time">— Loading —</div>
+      </div>
+
+      <!-- Status Badges -->
+      <div class="badges-row">
+        <div class="badge badge--offline" id="badge-system">
+          <span class="badge-dot" id="badge-system-dot"></span>
+          <span id="badge-system-text">Connecting…</span>
+        </div>
+        <div class="badge badge--info">
+          <span class="badge-dot"></span>
+          Latency: Ultra-Low
+        </div>
+        <div class="badge badge--info badge--bandwidth">
+          <span class="badge-dot"></span>
+          Bandwidth: QQVGA
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <main class="main">
+    <div class="stream-container offline" id="stream-container">
+
+      <!-- Stream top bar -->
+      <div class="stream-header">
+        <div class="stream-label">
+          <span class="rec-dot hidden" id="rec-dot"></span>
+          <span id="cam-label">CAM-01 • DISCONNECTED</span>
+        </div>
+        <div class="stream-meta" id="stream-meta">160×120 → 480×360</div>
+      </div>
+
+      <!-- Video viewport -->
+      <div class="stream-viewport">
+        <img
+          id="feed-image"
+          src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+          alt="Live surveillance feed from ESP32-CAM"
+          style="opacity: 0;"
+        />
+
+        <!-- Offline placeholder -->
+        <div class="offline-placeholder" id="offline-placeholder">
+          <div class="offline-icon">📷</div>
+          <div class="offline-text">System Offline</div>
+          <div class="offline-sub">No feed — camera disconnected or publisher stopped</div>
+        </div>
+      </div>
+
+      <!-- Stream bottom stats -->
+      <div class="stream-footer">
+        <div class="stream-stat" id="stat-frames">
+          FRAMES: <span class="value">0</span>
+        </div>
+        <div class="stream-stat" id="stat-status">
+          STATUS: <span class="value red">NO SIGNAL</span>
+        </div>
+        <div class="stream-stat" id="stat-resolution">
+          RES: <span class="value">480×360</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer class="footer">
+    <p class="footer-text">
+      <span>Efficient Compression Pipeline</span>
+      <span class="footer-divider">|</span>
+      Developed for Low-Bandwidth Devices
+    </p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "esp32-cam-relay-server",
+  "version": "1.0.0",
+  "description": "Lightweight cloud relay server for ESP32-CAM surveillance stream",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.0"
+  }
+}
