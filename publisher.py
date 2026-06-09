@@ -26,7 +26,7 @@ import requests
 # ═══════════════════════════════════════════════════════════════
 # ▸ CONFIGURATION — Update these before running
 # ═══════════════════════════════════════════════════════════════
-RELAY_URL = "https://YOUR-RELAY-SERVER.onrender.com/upload"
+RELAY_URL = "https://image-esp32-cam.onrender.com/upload"
 # For local testing: "http://localhost:3001/upload"
 
 SERIAL_PORT = "COM9"

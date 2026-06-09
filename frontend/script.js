@@ -8,7 +8,7 @@
 // ═══════════════════════════════════════════════════════════════
 // ▸ CONFIGURATION — Update this URL after deploying the relay!
 // ═══════════════════════════════════════════════════════════════
-const RELAY_URL = 'https://YOUR-RELAY-SERVER.onrender.com';
+const RELAY_URL = 'https://image-esp32-cam.onrender.com';
 // Example: 'https://esp32-relay.onrender.com'
 // For local testing: 'http://localhost:3001'
 // ═══════════════════════════════════════════════════════════════
